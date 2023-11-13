@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "985607271253",
+    "firebase_url": "https://taskminder-55f9a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "taskminder-55f9a",
+    "storage_bucket": "taskminder-55f9a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985607271253:android:df2c0833ab00abdabef5dc",
+        "android_client_info": {
+          "package_name": "com.example.taskminder2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMJmOPx_vTFxqcvv-RDIgFSg6Ea3WO2Yg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
