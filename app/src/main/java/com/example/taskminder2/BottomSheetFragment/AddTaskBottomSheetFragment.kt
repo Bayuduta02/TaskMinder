@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -28,7 +29,7 @@ class AddTaskBottomSheetFragment : BottomSheetDialogFragment() {
     private var isUpdate: Boolean = false
     private var taskToUpdate: Task? = null
 
-    @SuppressLint("CutPasteId")
+    @SuppressLint("CutPasteId", "SetTextI18n")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -85,10 +86,19 @@ class AddTaskBottomSheetFragment : BottomSheetDialogFragment() {
             if (isUpdate && taskToUpdate != null) {
                 // Lakukan pembaruan data ke Firebase sesuai taskToUpdate.id
                 val taskKey = taskToUpdate!!.id
+                val oldTask = taskToUpdate!!
                 taskToUpdate!!.isComplete = false
-                taskRef.child(taskKey).setValue(
-                    Task(taskTitle, description, date, time, event, id = taskKey)
-                )
+                val newTask = Task(taskTitle, description, date, time, event, id = taskKey)
+                taskRef.child(taskKey).setValue(newTask)
+
+                // Perbarui notifikasi jika ada perubahan pada data tugas
+                if (!oldTask.isSame(newTask)) {
+                    // Batalkan notifikasi yang sudah ada
+                    cancelNotification(taskKey)
+
+                    // Jadwalkan notifikasi yang baru dengan data yang sudah diperbarui
+                    scheduleNotification(newTask.date, newTask.time, newTask.title, taskKey)
+                }
             } else {
                 // Lakukan pembuatan data baru jika bukan mode pembaruan
                 val taskKey = taskRef.push().key
@@ -155,7 +165,7 @@ class AddTaskBottomSheetFragment : BottomSheetDialogFragment() {
 
         timePickerDialog.show()
     }
-    @SuppressLint("UnspecifiedImmutableFlag")
+    @SuppressLint("UnspecifiedImmutableFlag", "ScheduleExactAlarm", "ObsoleteSdkInt")
     private fun scheduleNotification(date: String, time: String, title: String, taskId: String) {
         val calendar = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -172,9 +182,31 @@ class AddTaskBottomSheetFragment : BottomSheetDialogFragment() {
         intent.putExtra("title", title)
         intent.putExtra("taskId", taskId)
 
-        val pendingIntent = PendingIntent.getBroadcast(requireContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT)
+        // Gunakan taskId sebagai requestCode
+        val pendingIntent = PendingIntent.getBroadcast(requireContext(), taskId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT)
 
-        alarmManager.set(AlarmManager.RTC, calendar.timeInMillis, pendingIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Jika versi Android M atau lebih baru, gunakan setExactAndAllowWhileIdle
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+        } else {
+            // Versi Android sebelum M, gunakan setExact
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+        }
+    }
+    @SuppressLint("UnspecifiedImmutableFlag")
+    private fun cancelNotification(taskId: String) {
+        val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(requireContext(), MyNotificationReceiver::class.java)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            requireContext(),
+            taskId.hashCode(),
+            intent,
+            PendingIntent.FLAG_ONE_SHOT
+        )
+
+        // Batalkan notifikasi berdasarkan pendingIntent
+        alarmManager.cancel(pendingIntent)
     }
     companion object {
         fun newInstance(task: Task? = null): AddTaskBottomSheetFragment {
