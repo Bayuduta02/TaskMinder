@@ -51,7 +51,7 @@ class MyNotificationReceiver : BroadcastReceiver() {
 
     @SuppressLint("UnspecifiedImmutableFlag", "MissingPermission")
     private fun showNotification(context: Context, title: String) {
-        val channelId = "Channel_Id" // Adjust with your notification channel ID
+        val channelId = "Channel_Id" // Adjust notification channel ID
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
         val intent = Intent(context, HomeActivity::class.java)
